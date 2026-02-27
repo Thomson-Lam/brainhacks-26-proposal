@@ -1,13 +1,23 @@
 # BrainHacks 2026 
 
+TODOs:
+
+1. compile full BoM and compile full price.
+2. resolve software integration issues: how to sample data from the EEG, visualization and tech stack for the EEG.
+3. brainstorm the full data pipeline process with modified YOLOdex.
+4. refine system design:
+    1. 'action tree' for contextual information of previous agent actions
+    2. how to structure agents properly: specialized subagents or one big agent? How to decide this?
+    3. proper system design and fallback: when and how are the EEG signals used during inference? This question needs to be answered.
+5. Compile abstract and introduction 
 
 ## Abstract 
 
-
+TODO 
 
 ## Introduction 
 
-
+TODO 
 ## System Architecture 
 
 V1 (naive over-engineered) architecture:
@@ -22,6 +32,10 @@ V2 (current proposed) architecture:
 EEG signals -> encoder + YOLO model -> LLM agent 
 ```
 check `scalp.md` for more details.
+
+## Project Implementation 
+
+TBD; check `implementation-proposal.md` for more details.
 
 ## Components 
 
@@ -66,6 +80,7 @@ The UltraCortex mark III was chosen over mark IV because the mark III proved to 
 
 ### Best Practices 
 
+- Using 
 
 # Sources 
 
