@@ -1,1 +1,57 @@
 .obsidian/*
+
+
+# Output — pipeline artifacts
+yolodex/output/
+yolodex/*.pt
+yolodex/*.onnx
+yolodex/runs/
+yolodex/team_exports/
+yolodex/*.zip
+yolodex/*.mov
+yolodex/*.mp4
+
+# Frontend build artifacts
+yolodex/landing/dist/
+
+# Test runs — keep structure + docs, ignore generated artifacts
+yolodex/tests/**/output/
+yolodex/tests/**/frames/
+yolodex/tests/**/weights/
+yolodex/tests/**/augmented/
+yolodex/tests/**/dataset/
+yolodex/tests/**/*.jpg
+yolodex/tests/**/*.jpeg
+yolodex/tests/**/*.png
+
+# Python
+yolodex/__pycache__/
+yolodex/*.pyc
+yolodex/*.pyo
+yolodex/*.egg-info/
+yolodex/dist/
+yolodex/build/
+yolodex/.venv/
+
+# Environment
+yolodex/.env
+yolodex/.env.*
+
+# OS
+yolodex/.DS_Store
+yolodex/Thumbs.db
+yolodex/yolodex.log
+
+# Claude
+.claude/
+
+# IDE
+.vscode/
+.idea/
+
+# Worktrees
+yolodex/tmp/yolodex-workers/
+
+# Node
+yolodex/node_modules/
+

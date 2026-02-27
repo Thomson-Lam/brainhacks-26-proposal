@@ -1,0 +1,19 @@
+{
+  "project": "fruit-ninja-yt-sXfdfLHp9Ko",
+  "video_url": "https://www.youtube.com/watch?v=sXfdfLHp9Ko",
+  "classes": [
+    "fruit",
+    "bomb",
+    "blade_trail"
+  ],
+  "target_accuracy": 0.75,
+  "max_iterations": 10,
+  "num_agents": 4,
+  "fps": 1,
+  "output_dir": "output",
+  "label_mode": "codex",
+  "model": "gpt-5-nano",
+  "yolo_model": "yolov8n.pt",
+  "epochs": 50,
+  "train_split": 0.8
+}

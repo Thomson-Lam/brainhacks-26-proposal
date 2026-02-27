@@ -10,7 +10,18 @@
 
 ## System Architecture 
 
+V1 (naive over-engineered) architecture:
 
+```
+EEG signals -> encoder -> YOLO model -> Hard Coded harness -> VLM or LLM agent -> decide next step 
+```
+
+V2 (current proposed) architecture:
+
+```
+EEG signals -> encoder + YOLO model -> LLM agent 
+```
+check `scalp.md` for more details.
 
 ## Components 
 
