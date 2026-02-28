@@ -1,4 +1,4 @@
-# SCALP — Brain-Signal-Augmented Computer Use Agent
+# SCALP : Brain-Signal-Augmented Computer Use Agent
 
 ## Problem
 
@@ -16,7 +16,7 @@ This project aims to explore integration of implicit brain signals as a new sour
 
 ## Architecture Evolution
 
-### V1 — Initial Proposal (Rejected)
+### V1: Initial Proposal (Rejected)
 
 Use Claude Code or Codex, and use the Yolodex skill to train lightweight YOLO vision transformer nano models for computer use classification. Instead of having a single big model, use specialized YOLO vision models as subagents, and use the original computer use model as a fall back or as an orchestrator instead. Contextual metadata or information is gathered and depending on brain signals, the agent decides on the next best course of action. Instead of allowing a model trained on brain signals to make decisions, this architecture relies on the intelligent agent to make the final call, especially for breaking down long and abstract ideas into actionable and verifiable steps to ensure task completion beyond just the triggering of a single action.
 
@@ -44,7 +44,7 @@ Additional system optimization: provide caching mechanisms beyond training knowl
 
 ---
 
-### V2 — Revised Architecture (Current)
+### V2: Revised Architecture (Current)
 
 The key insight: LLM agents consume text, but brain signals are tensors and screen pixels are images. Rather than using an expensive VLM to process screenshots, we can use **YOLO + OCR** to convert the screen into structured text, and a **brain signal encoder** to convert EEG into a discrete label. A **text-only LLM** then reasons over both streams.
 
@@ -75,9 +75,9 @@ Brain signals ──→ encoder/classifier        │
 
 Instead of targeting all desktop applications, we constrain the agent to **one specific app with 5-10 defined actions**. This changes everything:
 
-- **YOLO classes become finite and small**: `button`, `text_field`, `dropdown`, `slider`, `checkbox` — maybe 5-8 classes total
-- **Training data is manageable**: Record yourself using the app for 10-15 minutes, run yolodex pipeline. With augmentation (5x multiplier), ~50-100 raw frames yields ~250-500 training samples — sufficient for YOLOv8n
-- **Action space is enumerable**: `click(x, y)`, `type(text)`, `scroll(direction)`, keyboard shortcuts — a handful of actions
+- **YOLO classes become finite and small**: `button`, `text_field`, `dropdown`, `slider`, `checkbox`: ~5-8 classes total
+- **Training data is manageable**: Record yourself using the app for 10-15 minutes, run yolodex pipeline. With augmentation (5x multiplier), ~50-100 raw frames yields ~250-500 training samples, which is sufficient for YOLOv8n
+- **Action space is enumerable**: `click(x, y)`, `type(text)`, `scroll(direction)`, keyboard shortcuts are only a handful of actions
 - **Success criteria are clear**: "Did it complete the 5-step task?"
 
 #### What the LLM receives
@@ -130,37 +130,35 @@ while task_not_complete:
 
 ## Risk Assessment (V2)
 
-| Risk | Severity | Notes |
-|------|----------|-------|
-| YOLO can't differentiate UI elements | **Low** | With a constrained app and small class set (5-8 classes), YOLO handles this. Buttons, text fields, and checkboxes are visually distinct. |
-| Semantic meaning of elements | **Low** | OCR solves this. Tesseract/EasyOCR on cropped YOLO detections extracts the label text. |
-| Training data volume | **Medium** | For 5-8 UI classes in one app, ~200-500 labeled frames is sufficient for YOLOv8n. Yolodex with augmentation (5x multiplier) gets there from ~50-100 raw frames. |
-| Action execution | **Low** | PyAutoGUI maps normalized YOLO coords → screen coords → mouse click. Straightforward. |
-| Brain signal encoder | **High** | Hardest component. Needs a concrete signal type (SSVEP recommended for reliability with budget hardware) and a working classifier. |
-| EEG hardware build | **High** | 2+ weeks for 3D printing, assembly, electrode fitting, PiEEG setup, and debugging. |
-| End-to-end integration | **Medium** | Five components (EEG → encoder → screenshot → YOLO+OCR → LLM) all need to communicate in a loop. Integration bugs will eat time. |
-| Context engineering for LLM | **Medium** | Prompt design matters. The LLM needs: current state, action history, task goal, brain signal, and available actions. Getting this right takes iteration. |
-| OCR quality on target app | **Medium** | Test early. Run OCR on screenshots of the target app. If it uses custom fonts, icon-only buttons, or heavy styling, OCR will struggle — may need hardcoded label mappings for known icons. |
+| Risk                                 | Severity   | Notes                                                                                                                                                                                        |
+| ------------------------------------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| YOLO can't differentiate UI elements | **Low**    | With a constrained app and small class set (5-8 classes), YOLO handles this. Buttons, text fields, and checkboxes are visually distinct.                                                     |
+| Semantic meaning of elements         | **Low**    | OCR solves this. Tesseract/EasyOCR on cropped YOLO detections extracts the label text.                                                                                                       |
+| Training data volume                 | **Medium** | For 5-8 UI classes in one app, ~200-500 labeled frames is sufficient for YOLOv8n. Yolodex with augmentation (5x multiplier) gets there from ~50-100 raw frames.                              |
+| Action execution                     | **Low**    | PyAutoGUI maps normalized YOLO coords → screen coords → mouse click. Straightforward.                                                                                                        |
+| Brain signal encoder                 | **High**   | Hardest component. Needs a concrete signal type (SSVEP recommended for reliability with budget hardware) and a working classifier.                                                           |
+| EEG hardware build                   | **High**   | 2+ weeks for 3D printing, assembly, electrode fitting, PiEEG setup, and debugging.                                                                                                           |
+| End-to-end integration               | **Medium** | Five components (EEG → encoder → screenshot → YOLO+OCR → LLM) all need to communicate in a loop. Integration bugs will eat time.                                                             |
+| Context engineering for LLM          | **Medium** | Prompt design matters. The LLM needs: current state, action history, task goal, brain signal, and available actions. Getting this right takes iteration.                                     |
+| OCR quality on target app            | **Medium** | Test early. Run OCR on screenshots of the target app. If it uses custom fonts, icon-only buttons, or heavy styling, OCR will struggle. We may need hardcoded label mappings for known icons. |
 
 ---
 
-## Brain Signal Types — Pick One
+## Brain Signal Types: TODO: Pick One
 
-| Signal | Feasibility (8ch dry EEG) | Usefulness to agent | Notes |
-|--------|---------------------------|---------------------|-------|
-| **SSVEP** (steady-state visually evoked potential) | **High** — most reliable with budget hardware | Medium — requires flickering UI targets | Best bet for actually working. Use FFT peak detection. |
-| **P300** (event-related potential) | Moderate — needs ~50+ averaged trials | High — maps to "yes this one" selection | Slow, but conceptually clean for confirming actions. |
-| **ERN** (error-related negativity) | Low — subtle, hard in single trials | High — detects "that's wrong" responses | Ideal conceptually, but may not work with 8 dry channels. |
-| **Motor imagery** | Low — needs per-user calibration | Low — doesn't map naturally to confirm/reject | Not recommended for this use case. |
-| Alpha power (attention proxy) | Moderate — simple spectral analysis | Medium — "attending" vs "not attending" | Could work as a coarse engagement signal. |
+| Signal                                             | Feasibility (8ch dry EEG)                    | Usefulness to agent                          | Notes                                                     |
+| -------------------------------------------------- | -------------------------------------------- | -------------------------------------------- | --------------------------------------------------------- |
+| **SSVEP** (steady-state visually evoked potential) | **High**: most reliable with budget hardware | Medium: requires flickering UI targets       | Best bet for actually working. Use FFT peak detection.    |
+| **P300** (event-related potential)                 | Moderate: needs ~50+ averaged trials         | High: maps to "yes this one" selection       | Slow, but conceptually clean for confirming actions.      |
+| **ERN** (error-related negativity)                 | Low: subtle, hard in single trials           | High: detects "that's wrong" responses       | Ideal conceptually, but may not work with 8 dry channels. |
+| **Motor imagery**                                  | Low: needs per-user calibration              | Low: doesn't map naturally to confirm/reject | Not recommended for this use case.                        |
+| Alpha power (attention proxy)                      | Moderate: simple spectral analysis           | Medium: "attending" vs "not attending"       | Could work as a coarse engagement signal.                 |
 
 **Recommendation:** Start with **SSVEP** (most likely to produce clean results) or **alpha power** (simplest to implement). Use existing BCI libraries like MNE-Python for signal processing.
 
 ---
 
-## Suggested 1-Month Plan
-
-### Parallel workstreams
+## 1-Month Sprint Plan: Parallel Streams 
 
 The EEG hardware and the YOLO+OCR+LLM pipeline are independent. Develop them in parallel and integrate in the final week.
 
@@ -189,15 +187,15 @@ Use the keyboard mock for brain signals throughout Stream B development. This **
 
 ## Feasibility Verdict (V2)
 
-| Aspect | Verdict |
-|--------|---------|
-| Core thesis (brain signals augment computer use agents) | Sound |
-| Hardware choice (Mark III + PiEEG) | Reasonable for budget PoC |
-| YOLO + OCR replacing VLM for state extraction | **Valid architecture** — proven pattern, cost-effective |
-| Brain signals as runtime gate / soft reward | Clean framing, achievable with simple classifier |
-| Constrained agent (one app, 5-10 actions) | Feasible scope for 1-month demo |
-| Full general desktop agent | Future work — not feasible in 1 month |
-| Context engineering (structured text → LLM) | Solvable with iteration on prompt design |
+| Aspect                                                  | Verdict                                                  |
+| ------------------------------------------------------- | -------------------------------------------------------- |
+| Core thesis (brain signals augment computer use agents) | Sound                                                    |
+| Hardware choice (Mark III + PiEEG)                      | Reasonable for budget PoC                                |
+| YOLO + OCR replacing VLM for state extraction           | **Valid architecture**: a proven pattern, cost-effective |
+| Brain signals as runtime gate / soft reward             | Clean framing, achievable with simple classifier         |
+| Constrained agent (one app, 5-10 actions)               | Feasible scope for 1-month demo                          |
+| Full general desktop agent                              | Future work; not feasible in 1 month                     |
+| Context engineering (structured text → LLM)             | Solvable with iteration on prompt design                 |
 
 **Overall: feasible as a proof-of-concept demo within 1 month, if scope stays constrained to one app and brain signal type.**
 

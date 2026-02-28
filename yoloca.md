@@ -1,5 +1,7 @@
 # YOLOCA — YOLO + OCR Computer Agent
 
+This is the YOLO + LLM as computer agent proposal without the EEG integrations.
+
 ## Abstract
 
 Current industry standard computer use agents that operate desktop applications autonomously primarily depend on Vision-Language Models (VLMs) to interpret screenshots, incurring high cost (~$0.01-0.03 per step), high latency (1-3 seconds per inference), and opaque visual reasoning. We propose **YOLOCA**, a novel architecture that decomposes VLM-based perception into two lightweight stages of vision and reasoning: a YOLO object detector that localizes UI elements and an OCR pass that extracts their text labels. The combined output is a structured text representation of the screen state, which a **text-only LLM** consumes to reason and act. This eliminates the need for a more compute intensive vision model at inference time. On constrained single-application benchmarks, YOLOCA can achieve superior performance, such as a 5-30x reduction in per-step cost and 2-3x reduction in latency compared to VLM-based agents. We incorporate **yolodex** in our training process, an autonomous pipeline that trains application-specific YOLO models from raw screen recordings with no explicit manual labeling.
