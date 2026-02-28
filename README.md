@@ -36,16 +36,67 @@ Our contributions are as follows:
 
 ## System Architecture
 
-V2 (current proposed) architecture:
-```
-EEG signals -> encoder + YOLO model -> LLM agent 
-```
-check `scalp.md` for more details.
+```mermaid
+flowchart TD
+    subgraph HW["Hardware"]
+        EEG["8-ch EEG\n(Ultracortex + ESP-EEG)"]
+        SCREEN["Screen Capture\n(PyAutoGUI screenshot)"]
+    end
 
-V1 (previous naive) architecture:
+    subgraph MCP["MCP Server (Python)"]
+        direction TB
+        subgraph PERCEPTION["Perception Tools"]
+            YOLO["YOLOv8n\nUI element detection"]
+            OCR["OCR\n(EasyOCR / Tesseract)"]
+            STRUCT["Structured JSON\n{type, label, position, conf}"]
+        end
+
+        subgraph BRAIN["Brain Signal Tool"]
+            BUF["Ring Buffer\n(continuous EEG stream)"]
+            ENC["Encoder / Classifier\n(MNE-Python + FFT)"]
+            LABEL["Discrete Label\nconfirm · reject · uncertain"]
+        end
+
+        subgraph ACTION["Action Tools"]
+            CMD["run_command()\nsubprocess · programmatic first"]
+            BROWSER["browser_action()\nPlaywright fallback"]
+            GUI["click() · type_text()\nPyAutoGUI GUI fallback"]
+            VERIFY["verify_screen()\npost-action confirmation"]
+        end
+
+        HIST["get_action_history()\nappend-only state log"]
+    end
+
+    subgraph AGENT["LLM Agent (text-only)"]
+        REASON["Reason over\nscreen state + history + task"]
+        PROPOSE["Propose action"]
+        GATE{"Brain signal\ngate"}
+        EXEC["Execute action"]
+        REPLAN["Re-plan"]
+    end
+
+    EEG -->|"continuous signal"| BUF
+    BUF --> ENC --> LABEL
+
+    SCREEN -->|"capture_and_detect()"| YOLO
+    YOLO --> OCR --> STRUCT
+
+    STRUCT -->|"tool response"| REASON
+    HIST -->|"tool response"| REASON
+    REASON --> PROPOSE --> GATE
+
+    LABEL -->|"get_brain_signal()"| GATE
+    GATE -->|"confirm"| EXEC
+    GATE -->|"reject / uncertain"| REPLAN
+    REPLAN --> REASON
+
+    EXEC --> CMD
+    EXEC --> BROWSER
+    EXEC --> GUI
+    EXEC -->|"verify result"| VERIFY
+    VERIFY -->|"capture_and_detect()"| YOLO
 ```
-EEG signals -> encoder -> YOLO model -> Hard Coded harness -> VLM or LLM agent -> decide next step 
-```
+
 
 ## Project Implementation 
 
