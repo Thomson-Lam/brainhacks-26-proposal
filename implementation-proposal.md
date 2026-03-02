@@ -1,5 +1,22 @@
 # Implementation Proposal
 
+## Tech Stack
+
+| Component | Technology | Rationale |
+|-----------|------------|-----------|
+| **EEG Acquisition** | Brainflow | Native OpenBCI integration + generic LSL streaming; cross-platform; real-time ring buffer APIs |
+| **Vision (YOLO)** | Ultralytics YOLOv8n | Lightweight, fast (~5ms CPU), proven in yolodex pipeline |
+| **OCR** | EasyOCR or Tesseract | Extract text labels from YOLO-detected UI elements |
+| **Agent Protocol** | MCP (Model Context Protocol) | Standardized tool interface; any client can connect |
+| **GUI Automation** | PyAutoGUI | Maps coordinates to mouse/keyboard actions |
+| **Browser Automation** | Playwright | Programmatic web interaction |
+| **Brain Signal Processing** | MNE-Python | FFT/spectral analysis for SSVEP/alpha power classification |
+| **Python Environment** | `uv` + Python 3.11+ | Fast dependency management, used by yolodex |
+
+**Key Dependencies**: `brainflow`, `ultralytics`, `easyocr`, `mne`, `pyautogui`, `playwright`, `mcp`
+
+---
+
 ## Proposal
 
 The project will be implemented as a **MCP server + CLI frontend** for the AI agent.
@@ -151,6 +168,121 @@ The LLM agent's decision loop:
 4. Execute action
 5. Call `capture_and_detect()` or `verify_screen()` to confirm result
 6. Repeat
+
+---
+
+## EEG Data Acquisition Strategy
+
+### Brainflow as the Primary Interface
+
+**Brainflow** is the recommended library for EEG data acquisition due to its ideal fit for this architecture:
+
+- **Device Support**: Native OpenBCI integration + generic LSL streaming. PiEEG can either appear as an OpenBCI-compatible device or stream via LSL.
+- **Cross-Platform**: Handles hardware abstraction across Linux/Windows/macOS without code changes.
+- **Real-Time APIs**: Built-in ring buffer and filtering APIs—exactly what's needed for the MCP server to sample at decision points.
+
+### Implementation Pattern
+
+Use Brainflow's `BoardShim` to start a background acquisition thread in the MCP server process:
+
+```
+EEG hardware (PiEEG) ──→ Brainflow BoardShim
+                              │
+                              ▼ (background thread)
+                        Rolling ring buffer (10s)
+                              │
+                              │  agent calls get_brain_signal()
+                              ▼
+                        Extract last N-second window
+                              │
+                              ▼
+                        Encoder/classifier (MNE-Python)
+                              │
+                              ▼
+                        Return "confirm" | "reject" | "uncertain"
+```
+
+**Window Sizes by Signal Type**:
+
+| Signal Type | Window Size | Notes |
+|-------------|-------------|-------|
+| SSVEP | ~1-2 seconds | FFT peak detection on steady-state response |
+| Alpha power | ~2-5 seconds | Simple spectral band power analysis |
+| P300 | ~0.5-1s per trial | Needs multiple averaged trials (slower) |
+
+### Alternative: Custom PiEEG Bridge
+
+If PiEEG isn't Brainflow-compatible, run a separate lightweight Python script:
+1. Reads from PiEEG via `pyserial` or custom driver
+2. Maintains ring buffer
+3. Exposes local TCP socket or memory-mapped file
+4. MCP server reads from this bridge
+
+This provides clean separation and is easy to mock during development by replacing the bridge with a keyboard input mock.
+
+---
+
+## Bridging LLM Decisions to GUI Execution
+
+### The Semantic-to-Pixel Bridge
+
+The LLM reasons over structured text, not pixels. The harness must bridge this gap by resolving semantic element references to screen coordinates at execution time.
+
+**Step 1: Perception Returns Structured Data**
+
+`capture_and_detect()` returns:
+
+```json
+[
+  {"type": "button", "label": "Submit", "position": [0.52, 0.31], "bbox": [640, 180, 720, 220]},
+  {"type": "text_field", "label": "Email", "position": [0.52, 0.50], "bbox": [640, 300, 720, 340]}
+]
+```
+
+**Step 2: Semantic Action Tools**
+
+Instead of `click(x, y)`, provide semantic tools that the LLM can use naturally:
+
+| Tool | Parameters | Resolution |
+|------|------------|------------|
+| `click_element(element_id: str)` | `"Submit button"` or `"Email text_field"` | Match label in last detection → get position → PyAutoGUI |
+| `type_into(element_id: str, text: str)` | `"Email text_field"`, `"user@example.com"` | Match element → click center → type text |
+| `click_at(x: float, y: float)` | Normalized coordinates `[0.0-1.0]` | Direct fallback when semantic match fails |
+
+**Step 3: Execution Flow**
+
+1. LLM reasons: *"I need to click the Submit button"*
+2. LLM calls: `click_element("Submit button")`
+3. Server resolves: `"Submit"` label → `position=[0.52, 0.31]`
+4. Server converts: normalized → screen pixels (via display resolution)
+5. PyAutoGUI executes click at calculated coordinates
+6. `verify_screen()` confirms the action had expected effect
+
+### Handling Coordinate Staleness
+
+**Problem**: If the user scrolls or the UI changes between `capture_and_detect()` and `click_element()`, coordinates are stale.
+
+**Solutions**:
+
+1. **Auto-Re-Verify** (recommended): Before executing a click, quickly re-capture and confirm element is still at expected location (adds ~50-100ms latency).
+2. **Constrained Tasks**: Design the demo task to avoid dynamic scrolling or moving elements.
+3. **Smart Retry**: If click fails verification, automatically re-capture and retry once.
+
+### Tool Schema Example
+
+```python
+{
+  "name": "click_element",
+  "description": "Click on a UI element identified by its label. \
+    Resolves to coordinates from the last screen capture. \
+    PREFER programmatic tools (run_command) when available.",
+  "parameters": {
+    "element_id": "string (e.g., 'Submit button', 'Email text_field')"
+  }
+}
+```
+
+The LLM never sees raw pixels—only semantic labels like `"Submit button"`—while the harness handles the coordinate resolution and execution.
 
 ---
 

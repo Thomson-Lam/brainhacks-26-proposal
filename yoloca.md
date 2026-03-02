@@ -289,12 +289,12 @@ For a target desktop application: record 10-15 minutes of yourself using the app
 
 Annotate frames with bounding boxes using one of four labeling strategies:
 
-| Mode | Method | Requirements |
-|------|--------|--------------|
-| `codex` | Codex subagents view images directly | None (no API keys) |
-| `gpt` | GPT vision with structured output | `OPENAI_API_KEY` |
-| `gemini` | Google Gemini native bbox detection | `GEMINI_API_KEY` |
-| `cua+sam` | OpenAI CUA clicks + SAM segmentation | `OPENAI_API_KEY` |
+| Mode      | Method                               | Requirements       |
+| --------- | ------------------------------------ | ------------------ |
+| `codex`   | Codex subagents view images directly | None (no API keys) |
+| `gpt`     | GPT vision with structured output    | `OPENAI_API_KEY`   |
+| `gemini`  | Google Gemini native bbox detection  | `GEMINI_API_KEY`   |
+| `cua+sam` | OpenAI CUA clicks + SAM segmentation | `OPENAI_API_KEY`   |
 
 Output format: YOLO normalized coordinates — `class_id center_x center_y norm_width norm_height` — one detection per line in a `.txt` file alongside each frame.
 
@@ -413,17 +413,17 @@ The YOLOCA pipeline is faster because YOLO and OCR run locally, and text-only LL
 
 ## Implementation Effort
 
-| Component | Effort | Notes |
-|-----------|--------|-------|
-| YOLO training pipeline (yolodex) | Done | Fully implemented — collect, label, augment, train, eval |
-| OCR integration | Low | EasyOCR / Tesseract on cropped YOLO detections. A few lines per detection. |
-| MCP server boilerplate | Low | Python MCP SDK handles protocol. Tool registration is straightforward. |
-| YOLO integration in server | Low | Load model, run inference, return JSON — yolodex already has this pattern. |
-| Action execution tools | Low | PyAutoGUI + subprocess. Simple wrappers. |
-| State tracking / history | Low | Append-only list in memory. |
-| CLI frontend | Free | Use Claude Code or Claude Desktop as the MCP client. |
-| Context engineering / prompts | Medium | Iteration-heavy. Design structured text format, test on target app. |
-| **Total** | **~1-2 weeks** | MCP server is ~3-5 days. Context engineering is the rest. |
+| Component                        | Effort         | Notes                                                                      |
+| -------------------------------- | -------------- | -------------------------------------------------------------------------- |
+| YOLO training pipeline (yolodex) | Done           | Fully implemented — collect, label, augment, train, eval                   |
+| OCR integration                  | Low            | EasyOCR / Tesseract on cropped YOLO detections. A few lines per detection. |
+| MCP server boilerplate           | Low            | Python MCP SDK handles protocol. Tool registration is straightforward.     |
+| YOLO integration in server       | Low            | Load model, run inference, return JSON — yolodex already has this pattern. |
+| Action execution tools           | Low            | PyAutoGUI + subprocess. Simple wrappers.                                   |
+| State tracking / history         | Low            | Append-only list in memory.                                                |
+| CLI frontend                     | Free           | Use Claude Code or Claude Desktop as the MCP client.                       |
+| Context engineering / prompts    | Medium         | Iteration-heavy. Design structured text format, test on target app.        |
+| **Total**                        | **~1-2 weeks** | MCP server is ~3-5 days. Context engineering is the rest.                  |
 
 ---
 
