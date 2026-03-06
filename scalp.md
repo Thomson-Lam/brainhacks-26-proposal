@@ -1,19 +1,5 @@
 # SCALP : Brain-Signal-Augmented Computer Use Agent
 
-## Problem
-
-Computer use agents are expensive and unreliable across long context windows due to the vision + language + agentic complexity.
-
-This project aims to explore integration of implicit brain signals as a new source of data to augment computer use agents, and to make computer use agents more reliable and safe across long multi-step scenarios.
-
-## Goals
-
-- Build an EEG headset (Ultracortex Mark III + PiEEG, 8 channels)
-- Sample brain signal data from the EEG
-- Build a constrained computer use agent that uses YOLO + OCR instead of a VLM for visual state extraction, with brain signals as a runtime feedback/gating mechanism
-
----
-
 ## Architecture Evolution
 
 ### V1: Initial Proposal (Rejected)
@@ -44,20 +30,7 @@ Additional system optimization: provide caching mechanisms beyond training knowl
 
 ---
 
-### V2: Revised Architecture (Current)
-
-The key insight: LLM agents consume text, but brain signals are tensors and screen pixels are images. Rather than using an expensive VLM to process screenshots, we can use **YOLO + OCR** to convert the screen into structured text, and a **brain signal encoder** to convert EEG into a discrete label. A **text-only LLM** then reasons over both streams.
-
-```
-Screen pixels ──→ YOLO (detect UI elements + bounding boxes)
-                    → OCR on each detection (extract text labels)
-                        → structured text ──┐
-                                            ├──→ LLM agent (text-only) ──→ action
-Brain signals ──→ encoder/classifier        │
-                    → discrete label ───────┘
-```
-
-#### Why this works
+#### V2 (Readme) architecture points 
 
 1. **YOLO as a perception-to-text bridge is proven.** The yolodex pipeline already does this — a trained detector outputs bounding boxes + class labels, which are structured enough for an LLM to consume as context. No vision model needed downstream.
 
